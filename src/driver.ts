@@ -219,24 +219,33 @@ export class AppiumFlutterDriver extends BaseDriver<FlutterDriverConstraints> {
    }
 
    async executeCommand(command: any, ...args: any) {
-      if (
-         this.currentContext === this.NATIVE_CONTEXT_NAME &&
-         isFlutterDriverCommand(command)
-      ) {
+      const elementId = args[0];  // First argument is typically element ID for element commands
+      
+      // NEW: Check if element belongs to platform driver cache
+      if (elementId && typeof elementId === 'string' && ELEMENT_CACHE.has(elementId)) {
+         const cachedProxy = ELEMENT_CACHE.get(elementId);
+         
+         // If element was found via platform driver (not Flutter proxy), route there
+         if (cachedProxy !== this.proxy) {
+            this.log.debug(
+               `Routing ${command} to platform driver (element ${elementId} owned by platform proxy)`
+            );
+            return await this.proxydriver.executeCommand(command as string, ...args);
+         }
+      }
+      
+      // Existing logic: Flutter commands in NATIVE_APP context -> Flutter server
+      if (this.currentContext === this.NATIVE_CONTEXT_NAME && 
+          isFlutterDriverCommand(command)) {
          this.log.debug(
             `executeCommand: command ${command} is flutter command using flutter driver`,
          );
          return await super.executeCommand(command, ...args);
-      } else {
-         this.log.info(
-            `Executing the command: ${command} with args: ${args} and flutterCommand ${isFlutterDriverCommand(command)}`,
-         );
-      }
-
+      } 
+      
+      // All other commands -> platform driver
+      this.log.debug(`Executing command ${command} via platform driver`);
       this.handleContextSwitch(command, args);
-      logger.default.info(
-         `Executing the proxy command: ${command} with args: ${args}`,
-      );
       return await this.proxydriver.executeCommand(command as string, ...args);
    }
 

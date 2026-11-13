@@ -64,29 +64,14 @@ export async function getProxyDriver(
 }
 
 export function isFlutterDriverCommand(command: string) {
+   // Only session management commands that MUST go through Flutter driver
+   // Element commands now route based on element ownership via ELEMENT_CACHE
    return (
       [
          'createSession',
          'deleteSession',
          'getSession',
          'getSessions',
-         'findElement',
-         'findElements',
-         'findElementFromElement',
-         'findElementsFromElement',
-         'click',
-         'getText',
-         'setValue',
-         'keys',
-         'getName',
-         'clear',
-         'elementSelected',
-         'elementEnabled',
-         'getAttribute',
-         'elementDisplayed',
-         'execute',
-         'getElementRect',
-         'getSize',
       ].indexOf(command) >= 0
    );
 }
